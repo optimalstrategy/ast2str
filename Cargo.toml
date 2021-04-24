@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "ast2str",
+    "ast2str-lib",
+    "ast2str-derive"
+]
+
