@@ -94,6 +94,15 @@ impl<K: AstToStr, V: AstToStr> AstToStr for std::collections::HashMap<K, V> {
     }
 }
 
+impl<A: AstToStr, B: AstToStr> AstToStr for (A, B) {
+    fn ast_to_str(&self) -> String {
+        crate::builder::TreeBuilder::new("tuple")
+            .field("field0", &self.0)
+            .field("field1", &self.1)
+            .build()
+    }
+}
+
 impl<T: std::fmt::Debug> AstToStr for std::ops::Range<T> {
     fn ast_to_str(&self) -> String {
         format!("{:?}", self)

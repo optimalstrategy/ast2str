@@ -54,9 +54,14 @@ pub fn generate_builder_methods(
         FieldsToBuild::Fields(fields) => fields,
         FieldsToBuild::Forward(field) => {
             let field_name = if let Some(index) = field.index {
-                Ident::new(&index.to_string(), field.field.span())
+                if is_enum {
+                    Ident::new(&format!("operand{}", index), field.field.span()).into_token_stream()
+                } else {
+                    let index = syn::Index::from(index);
+                    quote! { #index }
+                }
             } else {
-                field.field.ident.unwrap()
+                field.field.ident.unwrap().into_token_stream()
             };
             return Ok(FieldsToBuild::Forward(quote! {
                 #field_name.ast_to_str()
