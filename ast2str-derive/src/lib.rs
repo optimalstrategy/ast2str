@@ -62,13 +62,13 @@ fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
             });
         }
     };
-    let rename_as = gen::extract_rename_ident(&i.attrs).unwrap_or_else(|| name.clone());
+    let rename_as = gen::extract_rename_ident(&i.attrs).unwrap_or_else(|| name.to_string());
     Ok(quote! {
         impl #generics ::ast2str::ast2str_lib::AstToStr for #name #generics {
             #[allow(unused_parens)]
             fn ast_to_str(&self) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
-                let mut builder = TreeBuilder::new(stringify!(#rename_as));
+                let mut builder = TreeBuilder::new(#rename_as);
 
                 #(builder = #fields;)*
 
@@ -81,7 +81,7 @@ fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
 /// Generates an [`AstToStr`] impl for the given enum.
 fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
     let enum_name = e.ident;
-    let rename_as = gen::extract_rename_ident(&e.attrs).unwrap_or_else(|| enum_name.clone());
+    let rename_as = gen::extract_rename_ident(&e.attrs).unwrap_or_else(|| enum_name.to_string());
 
     let mut arms = Vec::with_capacity(e.variants.len());
     for var in &e.variants {
@@ -90,7 +90,7 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
         let body = match fields {
             gen::FieldsToBuild::Fields(fields) => {
                 quote! {{
-                    let mut builder = TreeBuilder::new(concat!(stringify!(#rename_as), "::", stringify!(#name)));
+                    let mut builder = TreeBuilder::new(concat!(#rename_as, "::", stringify!(#name)));
 
                     #(builder = #fields;)*
 

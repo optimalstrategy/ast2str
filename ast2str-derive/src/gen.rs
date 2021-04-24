@@ -239,12 +239,12 @@ fn annotate_fields(given_fields: &Fields) -> Result<FieldsToBuild<AnnotatedField
 }
 
 /// Find and extracts the identifier supplied by the `#[rename = "..."]` attribute, if any.
-pub fn extract_rename_ident(attrs: &[syn::Attribute]) -> Option<syn::Ident> {
+pub fn extract_rename_ident(attrs: &[syn::Attribute]) -> Option<String> {
     attrs.iter().find_map(|attr| {
         get_attribute(attr).ok().and_then(|r| match r {
             A2SAttribute::Builder(_) => None,
             A2SAttribute::Rename(name) => match name {
-                syn::Lit::Str(s) => Some(syn::Ident::new(&s.value(), attr.span())),
+                syn::Lit::Str(s) => Some(s.value()),
                 _ => unreachable!(),
             },
         })
