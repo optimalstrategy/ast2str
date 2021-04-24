@@ -104,9 +104,9 @@ pub fn print_ast_list_without_node_name<T>(
     let mut collection = collection.into_iter().peekable();
     // TODO: un-hardcode the symbols
     let symbol = if collection.peek().is_none() {
-        "✕"
+        crate::symbols::CROSS
     } else {
-        "↓"
+        crate::symbols::DOWNWARDS_POINTING_ARROW
     };
     format(
         &format!("={}", symbol)[..],

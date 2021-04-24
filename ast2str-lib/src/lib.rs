@@ -18,6 +18,8 @@ pub mod symbols {
     pub static LEFT_BOTTOM_CORNER: &str = "╰";
     pub static RIGHT_UPPER_CORNER: &str = "╮";
     pub static RIGHT_BOTTOM_CORNER: &str = "╯";
+    pub static CROSS: &str = "✕";
+    pub static DOWNWARDS_POINTING_ARROW: &str = "↓";
 }
 
 macro_rules! impl_ast {
