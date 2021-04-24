@@ -25,7 +25,7 @@ use syn::{spanned::Spanned, Ident, ItemEnum, ItemStruct};
     AstToStr,
     attributes(skip, forward, debug, display, callback, default, list, rename,)
 )]
-pub fn derive_ast_printer(input: TokenStream) -> TokenStream {
+pub fn derive_ast2str(input: TokenStream) -> TokenStream {
     let item: syn::Item =
         syn::parse(input).expect("This macro can only be used with structs and enums");
 
@@ -49,12 +49,13 @@ pub fn derive_ast_printer(input: TokenStream) -> TokenStream {
 /// Generates an [`AstToStr`] impl for the given struct.
 fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
     let name = i.ident;
+    let generics = i.generics;
     let fields = match gen::generate_builder_methods(&i.fields, false)? {
         gen::FieldsToBuild::Fields(fields) => fields,
         gen::FieldsToBuild::Forward(fwd) => {
             return Ok(quote! {
-                impl ::ast_printer_derive::AstToStr for #name {
-                    fn print_ast(&self) -> String {
+                impl #generics ::ast2str::ast2str_lib::AstToStr for #name #generics {
+                    fn ast_to_str(&self) -> String {
                         self.#fwd
                     }
                 }
@@ -63,10 +64,10 @@ fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
     };
     let rename_as = gen::extract_rename_ident(&i.attrs).unwrap_or_else(|| name.clone());
     Ok(quote! {
-        impl ::ast_printer_derive::AstToStr for #name {
+        impl #generics ::ast2str::ast2str_lib::AstToStr for #name #generics {
             #[allow(unused_parens)]
             fn ast_to_str(&self) -> String {
-                use ::ast_printer_derive::TreeBuilder;
+                use ::ast2str::ast2str_lib::TreeBuilder;
                 let mut builder = TreeBuilder::new(stringify!(#rename_as));
 
                 #(builder = #fields;)*
@@ -123,11 +124,12 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
         });
     }
 
+    let generics = e.generics;
     Ok(quote! {
-        impl ::ast_printer_derive::AstToStr for #enum_name {
+        impl #generics ::ast2str::ast2str_lib::AstToStr for #enum_name #generics {
             #[allow(unused_parens)]
             fn ast_to_str(&self) -> String {
-                use ::ast_printer_derive::TreeBuilder;
+                use ::ast2str::ast2str_lib::TreeBuilder;
                 use #enum_name::*;
                 match &self {
                     #(#arms),*

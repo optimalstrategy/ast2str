@@ -1,5 +1,7 @@
 pub mod builder;
 
+pub use builder::TreeBuilder;
+
 /// A trait for printing ASTs in a pretty manner.
 pub trait AstToStr {
     /// This method should serialize the struct or enum recursively, returning a subtree.
