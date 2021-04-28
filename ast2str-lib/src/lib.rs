@@ -105,6 +105,27 @@ impl<A: AstToStr, B: AstToStr> AstToStr for (A, B) {
     }
 }
 
+impl<A: AstToStr, B: AstToStr, C: AstToStr> AstToStr for (A, B, C) {
+    fn ast_to_str(&self) -> String {
+        crate::builder::TreeBuilder::new("tuple")
+            .field("field0", &self.0)
+            .field("field1", &self.1)
+            .field("field2", &self.2)
+            .build()
+    }
+}
+
+impl<A: AstToStr, B: AstToStr, C: AstToStr, D: AstToStr> AstToStr for (A, B, C, D) {
+    fn ast_to_str(&self) -> String {
+        crate::builder::TreeBuilder::new("tuple")
+            .field("field0", &self.0)
+            .field("field1", &self.1)
+            .field("field2", &self.2)
+            .field("field3", &self.3)
+            .build()
+    }
+}
+
 impl<T: std::fmt::Debug> AstToStr for std::ops::Range<T> {
     fn ast_to_str(&self) -> String {
         format!("{:?}", self)
