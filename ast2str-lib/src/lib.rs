@@ -85,6 +85,12 @@ impl<T: AstToStr> AstToStr for Option<T> {
     }
 }
 
+impl<V: AstToStr> AstToStr for std::cell::RefCell<V> {
+    fn ast_to_str(&self) -> String {
+        self.borrow().ast_to_str()
+    }
+}
+
 impl<K: AstToStr, V: AstToStr> AstToStr for std::collections::HashMap<K, V> {
     fn ast_to_str(&self) -> String {
         crate::builder::print_ast_list_without_node_name(self.iter().enumerate(), |(i, (k, v))| {
