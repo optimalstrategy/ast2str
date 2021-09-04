@@ -8,6 +8,10 @@ repository = "https://github.com/optimalstrategy/ast2str"
 license = "MIT"
 description = "A crate for pretty-printing ASTs and other recursive data structures."
 documentation = "https://docs.rs/ast2str"
+exclude = [
+    ".gitignore",
+    ".github/*",
+]
 
 [workspace]
 
