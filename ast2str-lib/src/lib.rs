@@ -27,7 +27,7 @@ pub trait Symbols {
     /// A piece of trunk with a branch to the right, e.g. `├`.
     fn right_branch(&self) -> &'static str;
 
-    /// A single indentation symbol, e.g. ` `. 
+    /// A single indentation symbol, e.g. ` `.
     fn indent(&self) -> &'static str;
 
     /// The symbol for left upper corners, e.g. `╭`.
@@ -49,7 +49,9 @@ pub trait Symbols {
     fn item_list_symbol(&self) -> &'static str;
 
     /// Used by the debug impl for `&dyn Symbols`.
-    fn description(&self) -> &'static str { "dyn Symbols" }
+    fn description(&self) -> &'static str {
+        "dyn Symbols"
+    }
 }
 impl<'s> std::fmt::Debug for &'s dyn Symbols {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -60,8 +62,8 @@ impl<'s> std::fmt::Debug for &'s dyn Symbols {
 /// A macro for quick-n-dirty creation of `Symbols` implementations.
 /// Accepts either 10 difference strings to use as symbols in the order they appear in the trait, or a single value to be used inside all methods.
 #[macro_export]
-macro_rules! create_symbols { 
-    ($Ty:ident, 
+macro_rules! create_symbols {
+    ($Ty:ident,
         $horizontal_bar:expr,
         $vertical_bar:expr,
         $right_branch:expr,
@@ -74,27 +76,48 @@ macro_rules! create_symbols {
         $item_list_symbol:expr
     ) => {
         impl Symbols for $Ty {
-            fn description(&self) -> &'static str { stringify!($Ty) }
-            fn horizontal_bar(&self) -> &'static str  { $horizontal_bar }
-            fn vertical_bar(&self) -> &'static str  { $vertical_bar }
-            fn right_branch(&self) -> &'static str  { $right_branch }
-            fn indent(&self) -> &'static str  { $indent }
-            fn left_upper_corner(&self) -> &'static str  { $left_upper_corner }
-            fn left_bottom_corner(&self) -> &'static str  { $left_bottom_corner }
-            fn right_upper_corner(&self) -> &'static str  { $right_upper_corner }
-            fn right_bottom_corner(&self) -> &'static str { $right_bottom_corner }
-            fn missing_items_symbol(&self) -> &'static str  { $missing_items_symbol }
-            fn item_list_symbol(&self) -> &'static str  { $item_list_symbol }
+            fn description(&self) -> &'static str {
+                stringify!($Ty)
+            }
+            fn horizontal_bar(&self) -> &'static str {
+                $horizontal_bar
+            }
+            fn vertical_bar(&self) -> &'static str {
+                $vertical_bar
+            }
+            fn right_branch(&self) -> &'static str {
+                $right_branch
+            }
+            fn indent(&self) -> &'static str {
+                $indent
+            }
+            fn left_upper_corner(&self) -> &'static str {
+                $left_upper_corner
+            }
+            fn left_bottom_corner(&self) -> &'static str {
+                $left_bottom_corner
+            }
+            fn right_upper_corner(&self) -> &'static str {
+                $right_upper_corner
+            }
+            fn right_bottom_corner(&self) -> &'static str {
+                $right_bottom_corner
+            }
+            fn missing_items_symbol(&self) -> &'static str {
+                $missing_items_symbol
+            }
+            fn item_list_symbol(&self) -> &'static str {
+                $item_list_symbol
+            }
         }
     };
     ($Ty:ident, $sym:tt) => {
         $crate::create_symbols!($Ty, $sym, $sym, $sym, $sym, $sym, $sym, $sym, $sym, $sym, $sym);
-    }
+    };
 }
 
-
-/// The default set of symbols that produces neatly-drawn trees. 
-/// 
+/// The default set of symbols that produces neatly-drawn trees.
+///
 /// # Example
 /// ```bash
 /// StmtKind::Var
@@ -122,21 +145,22 @@ macro_rules! create_symbols {
 /// ```
 pub struct DefaultSymbols;
 
-create_symbols!(DefaultSymbols, 
-    symbols::HORIZONTAL_BAR, 
-    symbols::VERTICAL_BAR, 
-    symbols::BRANCH, 
-    symbols::INDENT, 
-    symbols::LEFT_UPPER_CORNER, 
-    symbols::LEFT_BOTTOM_CORNER, 
-    symbols::RIGHT_UPPER_CORNER, 
-    symbols::RIGHT_BOTTOM_CORNER, 
-    symbols::CROSS, 
+create_symbols!(
+    DefaultSymbols,
+    symbols::HORIZONTAL_BAR,
+    symbols::VERTICAL_BAR,
+    symbols::BRANCH,
+    symbols::INDENT,
+    symbols::LEFT_UPPER_CORNER,
+    symbols::LEFT_BOTTOM_CORNER,
+    symbols::RIGHT_UPPER_CORNER,
+    symbols::RIGHT_BOTTOM_CORNER,
+    symbols::CROSS,
     symbols::DOWNWARDS_POINTING_ARROW
 );
 
 /// A set of symbols where every symbol is either whitespace (` `) or an empty string.
-/// 
+///
 /// # Example
 /// ```bash
 /// StmtKind::Var
@@ -164,7 +188,6 @@ create_symbols!(DefaultSymbols,
 /// ```
 pub struct TestSymbols;
 create_symbols!(TestSymbols, " ", " ", " ", " ", " ", " ", " ", " ", "", "");
-
 
 /// The symbols used by [`DefaultSymbols]`.
 pub mod symbols {
@@ -257,12 +280,16 @@ impl<V: Copy + AstToStr> AstToStr for std::cell::Cell<V> {
 
 impl<K: AstToStr, V: AstToStr> AstToStr for std::collections::HashMap<K, V> {
     fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
-        crate::builder::print_ast_list_without_node_name(self.iter().enumerate(), |(i, (k, v))| {
-            crate::builder::TreeBuilder::new(&format!("entry: {}", i), s)
-                .field("key", k)
-                .field("value", v)
-                .build()
-        }, s)
+        crate::builder::print_ast_list_without_node_name(
+            self.iter().enumerate(),
+            |(i, (k, v))| {
+                crate::builder::TreeBuilder::new(&format!("entry: {}", i), s)
+                    .field("key", k)
+                    .field("value", v)
+                    .build()
+            },
+            s,
+        )
     }
 }
 
