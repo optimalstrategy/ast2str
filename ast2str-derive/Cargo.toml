@@ -1,6 +1,6 @@
 [package]
 name = "ast2str-derive"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["OptimalStrategy <17456182+OptimalStrategy@users.noreply.github.com>"]
 edition = "2018"
 

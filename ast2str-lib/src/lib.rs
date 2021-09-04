@@ -1,18 +1,22 @@
 pub mod builder;
+pub mod utils;
 
 pub use builder::TreeBuilder;
 
 /// A trait for printing ASTs in a pretty manner.
 pub trait AstToStr {
     /// This method is auto-implemented to call [`ast_to_str_impl`] with [`DefaultSymbols`].
+    ///
+    /// [`ast_to_str_impl`]: #tymethod.ast_to_str_impl
     fn ast_to_str(&self) -> String {
         self.ast_to_str_impl(&DefaultSymbols)
     }
 
-    /// This method should serialize the struct or enum recursively, returning a subtree.
+    /// This method should serialize the struct or enum recursively, returning a tree.
     fn ast_to_str_impl(&self, s: &dyn Symbols) -> String;
 }
 
+/// A trait for supplying symbols to the AST formatting functions.
 pub trait Symbols {
     /// The horizontal bar symbol used to draw horizontal tree branches, e.g. `─`.
     fn horizontal_bar(&self) -> &'static str;
@@ -53,6 +57,8 @@ impl<'s> std::fmt::Debug for &'s dyn Symbols {
     }
 }
 
+/// A macro for quick-n-dirty creation of `Symbols` implementations.
+/// Accepts either 10 difference strings to use as symbols in the order they appear in the trait, or a single value to be used inside all methods.
 #[macro_export]
 macro_rules! create_symbols { 
     ($Ty:ident, 
@@ -67,7 +73,6 @@ macro_rules! create_symbols {
         $missing_items_symbol:expr,
         $item_list_symbol:expr
     ) => {
-        pub struct $Ty;
         impl Symbols for $Ty {
             fn description(&self) -> &'static str { stringify!($Ty) }
             fn horizontal_bar(&self) -> &'static str  { $horizontal_bar }
@@ -88,6 +93,35 @@ macro_rules! create_symbols {
 }
 
 
+/// The default set of symbols that produces neatly-drawn trees. 
+/// 
+/// # Example
+/// ```bash
+/// StmtKind::Var
+/// ╰─declarations=↓
+///   ╰─Var
+///     ├─name: "x"
+///     ├─kind: Let
+///     ├─initializer: ExprKind::Binary
+///     │ ├─op: Add
+///     │ ├─left: Lit
+///     │ │ ├─token: "1"
+///     │ │ ╰─value: LitValue::Integer(1)
+///     │ ╰─right: Lit
+///     │   ├─token: "2.3"
+///     │   ╰─value: LitValue::Float(2.3)
+///     ╰─n_uses: 0
+/// StmtKind::Print
+/// ╰─value: ExprKind::Comma
+///   ╰─operands=↓
+///     ├─Lit
+///     │ ├─token: "\"hello, world!\""
+///     │ ╰─value: LitValue::Str("hello, world!")
+///     ╰─ExprKind::Variable
+///       ╰─name: "x"
+/// ```
+pub struct DefaultSymbols;
+
 create_symbols!(DefaultSymbols, 
     symbols::HORIZONTAL_BAR, 
     symbols::VERTICAL_BAR, 
@@ -100,7 +134,36 @@ create_symbols!(DefaultSymbols,
     symbols::CROSS, 
     symbols::DOWNWARDS_POINTING_ARROW
 );
-create_symbols!(TestSymbols, " ");
+
+/// A set of symbols where every symbol is either whitespace (` `) or an empty string.
+/// 
+/// # Example
+/// ```bash
+/// StmtKind::Var
+///   declarations=
+///     Var
+///       name: "x"
+///       kind: Let
+///       initializer: ExprKind::Binary
+///         op: Add
+///         left: Lit
+///           token: "1"
+///           value: LitValue::Integer(1)
+///         right: Lit
+///           token: "2.3"
+///           value: LitValue::Float(2.3)
+///       n_uses: 0
+/// StmtKind::Print
+///   value: ExprKind::Comma
+///     operands=
+///       Lit
+///         token: "\"hello, world!\""
+///         value: LitValue::Str("hello, world!")
+///       ExprKind::Variable
+///         name: "x"
+/// ```
+pub struct TestSymbols;
+create_symbols!(TestSymbols, " ", " ", " ", " ", " ", " ", " ", " ", "", "");
 
 
 /// The symbols used by [`DefaultSymbols]`.

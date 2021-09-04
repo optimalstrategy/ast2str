@@ -1,6 +1,4 @@
-//! A proc macro for pretty-printing ASTs (and nested structs in general).
-//!
-//! TODO: docs
+//! A proc macro for pretty-printing ASTs (and nested structures in general).
 #![feature(proc_macro_diagnostic)]
 extern crate syn;
 #[macro_use]
@@ -17,13 +15,9 @@ use syn::{spanned::Spanned, Ident, ItemEnum, ItemStruct};
 /// Every field of the given item must implement [`AstToStr`] or be annotated with one of the
 /// the attributes.
 ///
-/// # Example
-/// ```ignore
-/// TODO: docs
-/// ```
 #[proc_macro_derive(
     AstToStr,
-    attributes(skip, forward, debug, display, callback, default, list, rename,)
+    attributes(skip, forward, debug, display, quoted, callback, default, list, rename,)
 )]
 pub fn derive_ast2str(input: TokenStream) -> TokenStream {
     let item: syn::Item =
@@ -50,21 +44,27 @@ pub fn derive_ast2str(input: TokenStream) -> TokenStream {
 fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
     let name = i.ident;
     let generics = i.generics;
+
     let fields = match gen::generate_builder_methods(&i.fields, false)? {
         gen::FieldsToBuild::Fields(fields) => fields,
         gen::FieldsToBuild::Forward(fwd) => {
-            return Ok(quote! {
-                impl #generics ::ast2str::ast2str_lib::AstToStr for #name #generics {
+            return Ok(generate_impl_for_stream(
+                &name,
+                &generics,
+                quote! {
                     fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                         self.#fwd
                     }
-                }
-            });
+                },
+            ));
         }
     };
     let rename_as = gen::extract_rename_ident(&i.attrs).unwrap_or_else(|| name.to_string());
-    Ok(quote! {
-        impl #generics ::ast2str::ast2str_lib::AstToStr for #name #generics {
+
+    Ok(generate_impl_for_stream(
+        &name,
+        &generics,
+        quote! {
             #[allow(unused_parens)]
             fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
@@ -74,8 +74,8 @@ fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
 
                 builder.build()
             }
-       }
-    })
+        },
+    ))
 }
 
 /// Generates an [`AstToStr`] impl for the given enum.
@@ -136,15 +136,116 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
         }
     };
 
-    let generics = e.generics;
-    Ok(quote! {
-        impl #generics ::ast2str::ast2str_lib::AstToStr for #enum_name #generics {
+    Ok(generate_impl_for_stream(
+        &enum_name,
+        &e.generics,
+        quote! {
             #[allow(unused_parens)]
             fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
                 use #enum_name::*;
                 #impl_body
             }
+        },
+    ))
+}
+
+fn generate_impl_for_stream(
+    name: &syn::Ident,
+    generics: &syn::Generics,
+    body: TokenStream2,
+) -> TokenStream2 {
+    let parametrized_name = generics.parameterized_name(name);
+    let original_generics = generics.provided_generics_without_defaults();
+    let where_clauses = generics.provided_where_clauses();
+
+    quote! {
+        impl <#(#original_generics),*> ::ast2str::ast2str_lib::AstToStr for #parametrized_name
+        where
+            #(#where_clauses),*
+        {
+            #body
         }
-    })
+    }
+}
+
+/// The following trait was adapted from snafu (https://github.com/shepmaster/snafu/blob/main/snafu-derive/src/lib.rs#L1126) by Jake Goulding.
+trait GenericAwareness {
+    fn generics(&self) -> &syn::Generics;
+
+    fn parameterized_name(&self, name: &syn::Ident) -> TokenStream2 {
+        let original_generics = self.provided_generic_names();
+
+        quote! { #name<#(#original_generics,)*> }
+    }
+
+    fn provided_generic_types_without_defaults(&self) -> Vec<proc_macro2::TokenStream> {
+        use syn::TypeParam;
+        self.generics()
+            .type_params()
+            .map(|t: &TypeParam| {
+                let TypeParam {
+                    attrs,
+                    ident,
+                    colon_token,
+                    bounds,
+                    ..
+                } = t;
+                quote! {
+                    #(#attrs)*
+                    #ident
+                    #colon_token
+                    #bounds
+                }
+            })
+            .collect()
+    }
+
+    fn provided_generics_without_defaults(&self) -> Vec<proc_macro2::TokenStream> {
+        self.provided_generic_lifetimes()
+            .into_iter()
+            .chain(self.provided_generic_types_without_defaults().into_iter())
+            .collect()
+    }
+
+    fn provided_generic_lifetimes(&self) -> Vec<proc_macro2::TokenStream> {
+        use syn::{GenericParam, LifetimeDef};
+
+        self.generics()
+            .params
+            .iter()
+            .flat_map(|p| match p {
+                GenericParam::Lifetime(LifetimeDef { lifetime, .. }) => Some(quote! { #lifetime }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn provided_generic_names(&self) -> Vec<proc_macro2::TokenStream> {
+        use syn::{ConstParam, GenericParam, LifetimeDef, TypeParam};
+
+        self.generics()
+            .params
+            .iter()
+            .map(|p| match p {
+                GenericParam::Type(TypeParam { ident, .. }) => quote! { #ident },
+                GenericParam::Lifetime(LifetimeDef { lifetime, .. }) => quote! { #lifetime },
+                GenericParam::Const(ConstParam { ident, .. }) => quote! { #ident },
+            })
+            .collect()
+    }
+
+    fn provided_where_clauses(&self) -> Vec<proc_macro2::TokenStream> {
+        self.generics()
+            .where_clause
+            .iter()
+            .flat_map(|c| c.predicates.iter().map(|p| quote! { #p }))
+            .collect()
+    }
+}
+
+impl GenericAwareness for syn::Generics {
+    fn generics(&self) -> &syn::Generics {
+        self
+    }
 }
