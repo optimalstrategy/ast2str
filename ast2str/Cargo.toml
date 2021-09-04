@@ -10,8 +10,8 @@ description = "A crate for pretty-printing ASTs and other recursive data structu
 documentation = "https://docs.rs/ast2str"
 
 [dependencies]
-ast2str_lib = { package = "ast2str-lib", path = "../ast2str-lib", version = "1.1.0" }
-ast2str_derive = { package = "ast2str-derive", path = "../ast2str-derive", version = "0.2.2" }
+ast2str_lib = { version = "1.1.0", package = "ast2str-lib" }
+ast2str_derive = { version = "0.2.2", package = "ast2str-derive" }
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"
