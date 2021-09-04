@@ -1,19 +1,25 @@
 use std::borrow::Cow;
 
-use crate::{symbols::*, AstToStr};
+use crate::{AstToStr, Symbols};
 
 #[derive(Debug)]
-pub struct TreeBuilder<'a> {
+pub struct TreeBuilder<'a, 's> {
     name: Cow<'a, str>,
     children: Vec<String>,
+    symbols: &'s dyn Symbols,
 }
 
-impl<'a> TreeBuilder<'a> {
-    pub fn new<S: Into<Cow<'a, str>>>(name: S) -> Self {
+impl<'a, 's> TreeBuilder<'a, 's> {
+    pub fn new<S: Into<Cow<'a, str>>>(name: S, symbols: &'s dyn Symbols) -> Self {
         Self {
             name: name.into(),
             children: Vec::new(),
+            symbols,
         }
+    }
+
+    pub fn with_default_symbols<S: Into<Cow<'a, str>>>(name: S) -> Self {
+        Self::new(name, &crate::DefaultSymbols)
     }
 
     fn add_format(&mut self, key: String, value: String) {
@@ -26,7 +32,7 @@ impl<'a> TreeBuilder<'a> {
     }
 
     pub fn field<A: AstToStr>(mut self, name: &str, value: &A) -> Self {
-        self.add_format(name.into(), value.ast_to_str());
+        self.add_format(name.into(), value.ast_to_str_impl(self.symbols));
         self
     }
 
@@ -58,8 +64,12 @@ impl<'a> TreeBuilder<'a> {
         name: &str,
         collection: impl IntoIterator<Item = &'b S>,
     ) -> Self {
-        self.children
-            .push(print_ast_list_generic(name, collection, |s| s.ast_to_str()));
+        self.children.push(print_ast_list_generic(
+            name,
+            collection,
+            |s| s.ast_to_str_impl(self.symbols),
+            self.symbols,
+        ));
         self
     }
 
@@ -70,7 +80,7 @@ impl<'a> TreeBuilder<'a> {
         f: impl Fn(T) -> String,
     ) -> Self {
         self.children
-            .push(print_ast_list_generic(name, collection, f));
+            .push(print_ast_list_generic(name, collection, f, self.symbols));
         self
     }
 
@@ -80,7 +90,7 @@ impl<'a> TreeBuilder<'a> {
     }
 
     pub fn build(self) -> String {
-        format(&self.name, self.children)
+        format(&self.name, self.children, self.symbols)
     }
 }
 
@@ -100,17 +110,18 @@ impl TreeIndent {
 pub fn print_ast_list_without_node_name<T>(
     collection: impl IntoIterator<Item = T>,
     f: impl Fn(T) -> String,
+    s: &dyn Symbols,
 ) -> String {
     let mut collection = collection.into_iter().peekable();
-    // TODO: un-hardcode the symbols
     let symbol = if collection.peek().is_none() {
-        crate::symbols::CROSS
+        s.missing_items_symbol()
     } else {
-        crate::symbols::DOWNWARDS_POINTING_ARROW
+        s.item_list_symbol()
     };
     format(
         &format!("={}", symbol)[..],
         collection.map(|item| f(item)).collect(),
+        s,
     )
 }
 
@@ -118,47 +129,54 @@ pub fn print_ast_list_generic<T>(
     node: &str,
     collection: impl IntoIterator<Item = T>,
     f: impl Fn(T) -> String,
+    s: &dyn Symbols,
 ) -> String {
     format!(
         "{}{}",
         node,
-        print_ast_list_without_node_name(collection, f)
+        print_ast_list_without_node_name(collection, f, s)
     )
 }
 
-pub fn format(tree: &str, children: Vec<String>) -> String {
+pub fn format(tree: &str, children: Vec<String>, symbols: &dyn Symbols) -> String {
     let mut new_tree = Vec::with_capacity(children.len());
     new_tree.push(tree.to_string());
 
     if !children.is_empty() {
         for child in &children[0..children.len() - 1] {
-            new_tree.push(indent(child, TreeIndent::Trunk));
+            new_tree.push(indent(child, TreeIndent::Trunk, symbols));
         }
 
-        new_tree.push(indent(children.last().unwrap(), TreeIndent::Branch));
+        new_tree.push(indent(
+            children.last().unwrap(),
+            TreeIndent::Branch,
+            symbols,
+        ));
     }
 
     new_tree.join("\n")
 }
 
-pub fn indent(tree: &str, kind: TreeIndent) -> String {
+pub fn indent(tree: &str, kind: TreeIndent, s: &dyn Symbols) -> String {
     let tree = tree.split('\n').collect::<Vec<&str>>();
     let mut new_tree = vec![];
 
     // Handle the root first
     let wood = if kind.is_trunk() {
-        format!("{}{}", BRANCH, HORIZONTAL_BAR)
+        format!("{}{}", s.right_branch(), s.horizontal_bar())
     } else {
-        format!("{}{}", LEFT_BOTTOM_CORNER, HORIZONTAL_BAR)
+        format!("{}{}", s.left_bottom_corner(), s.horizontal_bar())
     };
     new_tree.push(format!("{}{}", wood, tree[0]));
+
+    let indent = s.indent();
 
     if tree.len() > 1 {
         for child in tree[1..tree.len()].iter() {
             let wood = if kind.is_trunk() {
-                format!("{}{}", VERTICAL_BAR, INDENT)
+                format!("{}{}", s.vertical_bar(), indent)
             } else {
-                INDENT.repeat(2)
+                indent.repeat(2)
             };
 
             new_tree.push(format!("{}{}", wood, child));
@@ -196,23 +214,23 @@ pub mod tests {
     }
 
     impl AstToStr for Token {
-        fn ast_to_str(&self) -> String {
+        fn ast_to_str_impl(&self, _: &dyn crate::Symbols) -> String {
             self.lexeme.to_string()
         }
     }
 
     impl AstToStr for Expr {
-        fn ast_to_str(&self) -> String {
+        fn ast_to_str_impl(&self, s: &dyn crate::Symbols) -> String {
             match self {
-                Expr::Binary(l, op, r) => TreeBuilder::new("Expr::Binary")
+                Expr::Binary(l, op, r) => TreeBuilder::new("Expr::Binary", s)
                     .field("left", l)
                     .debug("op", op)
                     .field("right", r)
                     .build(),
-                Expr::Variable(v) => TreeBuilder::new("Expr::Variable")
+                Expr::Variable(v) => TreeBuilder::new("Expr::Variable", s)
                     .quoted("name", &v.lexeme)
                     .build(),
-                Expr::If(r#if) => TreeBuilder::new("Expr::If")
+                Expr::If(r#if) => TreeBuilder::new("Expr::If", s)
                     .field("condition", &r#if.condition)
                     .list("then", r#if.then.iter())
                     .option("otherwise", "------", &r#if.otherwise)
@@ -237,7 +255,6 @@ pub mod tests {
             otherwise: Some(vec![]),
         });
 
-        println!("{}", ast.ast_to_str());
         assert_eq!(
             ast.ast_to_str(),
             r#"Expr::If
@@ -255,6 +272,43 @@ pub mod tests {
 │   ╰─right: Expr::Variable
 │     ╰─name: `d`
 ╰─otherwise=✕"#
+        );
+    }
+
+    #[test]
+    fn test_builder_with_custom_symbols() {
+        let ast = Expr::If(If {
+            condition: Box::new(Expr::Binary(
+                Box::new(Expr::Variable(Token { lexeme: "a" })),
+                BinOpKind::Plus,
+                Box::new(Expr::Variable(Token { lexeme: "b" })),
+            )),
+            then: vec![Expr::Binary(
+                Box::new(Expr::Variable(Token { lexeme: "c" })),
+                BinOpKind::Minus,
+                Box::new(Expr::Variable(Token { lexeme: "d" })),
+            )],
+            otherwise: Some(vec![]),
+        });
+
+        println!("{}", ast.ast_to_str_impl(&crate::TestSymbols));
+        assert_eq!(
+            ast.ast_to_str_impl(&crate::TestSymbols),
+            r#"Expr::If
+  condition: Expr::Binary
+    left: Expr::Variable
+      name: `a`
+    op: Plus
+    right: Expr::Variable
+      name: `b`
+  then= 
+    Expr::Binary
+      left: Expr::Variable
+        name: `c`
+      op: Minus
+      right: Expr::Variable
+        name: `d`
+  otherwise= "#
         );
     }
 }

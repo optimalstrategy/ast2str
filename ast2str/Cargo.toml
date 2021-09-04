@@ -1,9 +1,12 @@
 [package]
 name = "ast2str"
-version = "0.1.0"
+version = "1.1.0"
 authors = ["OptimalStrategy <17456182+OptimalStrategy@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
 ast2str_lib = { package=  "ast2str-lib", path = "../ast2str-lib" }
 ast2str_derive = { package=  "ast2str-derive", path = "../ast2str-derive" }
+
+[dev-dependencies]
+pretty_assertions = "0.7.2"

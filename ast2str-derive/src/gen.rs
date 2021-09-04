@@ -64,7 +64,7 @@ pub fn generate_builder_methods(
                 field.field.ident.unwrap().into_token_stream()
             };
             return Ok(FieldsToBuild::Forward(quote! {
-                #field_name.ast_to_str()
+                #field_name.ast_to_str_impl(__symbols)
             }));
         }
     };
@@ -186,7 +186,7 @@ fn annotate_fields(given_fields: &Fields) -> Result<FieldsToBuild<AnnotatedField
         }
 
         for attr in &field.attrs {
-            let new_attr = match get_attribute(&attr)? {
+            let new_attr = match get_attribute(attr)? {
                 A2SAttribute::Builder(attr) => attr,
                 A2SAttribute::Rename(value) => {
                     rename_as = Some(value);
