@@ -5,7 +5,8 @@
 //! these two repos ([#1.1](https://github.com/ves-lang/ves/blob/master/ves-parser/src/ast/mod.rs) +
 //! [#1.2](https://github.com/ves-lang/ves/blob/master/ves-parser/tests/t32_fn_if_expr_regression.test),
 //! [#2.1](https://github.com/langjam/jam0001/blob/main/dank/src/ast.rs)) for larger samples.
-//! ```
+//!
+//! ```rust
 //! // Import the macro
 //! use ast2str::AstToStr;
 //!
@@ -94,7 +95,7 @@
 //! | `#[list]`    | Format the annotated field by executing AstToStr on every element of `(&field).into_iter()` |
 //! | `#[list(name_or_closure)`      | Format the annotated field by applying the callback on every element of `(&field).into_iter()` |
 //! | `#[callback(name_or_closure)]` | Apply the given function or closure to `&field` and return the result |
-//! | `#[default = "value"]`         | Only applies to `Option` types. If the value is `Some(T), format &T with AstToStr. Otherwise, return the value of `default` |
+//! | `#[default = "value"]`         | Only applies to `Option` types. If the value is `Some(T)`, format &T with AstToStr. Otherwise, return the value of `default` |
 //!
 //! [`AstToStr`]: struct.AstToStr.html
 //! [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
