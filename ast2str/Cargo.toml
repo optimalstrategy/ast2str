@@ -6,8 +6,8 @@ edition = "2018"
 repository = "https://github.com/optimalstrategy/ast2str"
 
 [dependencies]
-ast2str_lib = { package=  "ast2str-lib", path = "../ast2str-lib" }
-ast2str_derive = { package=  "ast2str-derive", path = "../ast2str-derive" }
+ast2str_lib = { package = "ast2str-lib", path = "../ast2str-lib", version = "1.1.0" }
+ast2str_derive = { package = "ast2str-derive", path = "../ast2str-derive", version = "0.2.2" }
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"
