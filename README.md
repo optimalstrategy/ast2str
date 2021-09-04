@@ -4,7 +4,7 @@ A proc macro for pretty-printing ASTs and other recursive data structures.
 
 # Basic Usage
 
-Refer to the snippet below for a basic usage example, and see the [integration test](./ast2str/tests/ast.rs) and these two repos ([#1.1](https://github.com/ves-lang/ves/blob/master/ves-parser/src/ast/mod.rs) + [#1.2](https://github.com/ves-lang/ves/blob/master/ves-parser/tests/t32_fn_if_expr_regression.test), [#2.1](https://github.com/langjam/jam0001/blob/main/dank/src/ast.rs)) for larger samples.
+Refer to the snippet below for a basic usage example, and see the [integration test](./tests/ast.rs) and these two repos ([#1.1](https://github.com/ves-lang/ves/blob/master/ves-parser/src/ast/mod.rs) + [#1.2](https://github.com/ves-lang/ves/blob/master/ves-parser/tests/t32_fn_if_expr_regression.test), [#2.1](https://github.com/langjam/jam0001/blob/main/dank/src/ast.rs)) for larger samples.
 
 ```rs
 // Import the macro

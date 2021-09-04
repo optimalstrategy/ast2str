@@ -1,7 +1,19 @@
-[workspace]
-members = [
-    "ast2str",
-    "ast2str-lib",
-    "ast2str-derive"
-]
+[package]
+name = "ast2str"
+version = "1.1.0"
+authors = ["OptimalStrategy <17456182+OptimalStrategy@users.noreply.github.com>"]
+edition = "2018"
+homepage = "https://github.com/optimalstrategy/ast2str"
+repository = "https://github.com/optimalstrategy/ast2str"
+license = "MIT"
+description = "A crate for pretty-printing ASTs and other recursive data structures."
+documentation = "https://docs.rs/ast2str"
 
+[workspace]
+
+[dependencies]
+ast2str-lib = { version = "1.1.0", path = "ast2str-lib" }
+ast2str-derive = { version = "0.2.2", path = "ast2str-derive" }
+
+[dev-dependencies]
+pretty_assertions = "0.7.2"
