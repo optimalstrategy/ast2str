@@ -56,6 +56,21 @@ impl<'a> IntoIterator for &'_ Letters<'a> {
 }
 
 #[derive(AstToStr)]
+pub struct Token<'a> {
+    #[delegate = "lexeme"]
+    #[rename = "lexeme"]
+    source: &'a str,
+    #[skip]
+    span: std::ops::Range<usize>,
+}
+
+impl<'a> Token<'a> {
+    pub fn lexeme(&self) -> &'a str {
+        &self.source[self.span.clone()]
+    }
+}
+
+#[derive(AstToStr)]
 pub enum ExprKind<'a, T: Numeric> {
     Literal(#[forward] Literal<'a, T>),
     SpecialValue(#[forward] LitValue<'a, T>),
@@ -78,6 +93,7 @@ pub enum ExprKind<'a, T: Numeric> {
         values: Vec<i32>,
     },
     List(#[rename = "elements"] Vec<Expr<'a, T>>),
+    Variable(#[rename = "name"] Token<'a>),
 }
 
 #[derive(AstToStr)]
@@ -138,6 +154,7 @@ fn get_ast() -> Expr<'static, f64> {
         expr!(unboxed SpecialValue LitValue::Num(2.0)),
         expr!(unboxed SpecialValue LitValue::Bool(false)),
         expr!(unboxed SpecialValue LitValue::Str("another string")),
+        expr!(unboxed Variable Token { source: "a variable  ", span: 2..10 }),
     ])
 }
 
@@ -180,8 +197,11 @@ ExprKind::List
   │ ╰─field0: 2.0
   ├─LitValue::Bool
   │ ╰─field0: false
-  ╰─LitValue::Str
-    ╰─field0: `another string`"#
+  ├─LitValue::Str
+  │ ╰─field0: `another string`
+  ╰─ExprKind::Variable
+    ╰─name: Token
+      ╰─lexeme: "variable""#
             .trim()
             .with_display_as_debug_wrapper()
     );
@@ -229,8 +249,12 @@ ExprKind::List
     LitValue::Bool
       field0: false
     LitValue::Str
-      field0: `another string`"#
-            .trim()
-            .with_display_as_debug_wrapper()
+      field0: `another string`
+    ExprKind::Variable
+      name: Token
+        lexeme: "variable"
+      "#
+        .trim()
+        .with_display_as_debug_wrapper()
     );
 }

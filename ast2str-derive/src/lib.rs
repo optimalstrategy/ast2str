@@ -17,7 +17,9 @@ use syn::{spanned::Spanned, Ident, ItemEnum, ItemStruct};
 ///
 #[proc_macro_derive(
     AstToStr,
-    attributes(skip, forward, debug, display, quoted, callback, default, list, rename,)
+    attributes(
+        skip, forward, debug, display, quoted, callback, default, list, rename, delegate
+    )
 )]
 pub fn derive_ast2str(input: TokenStream) -> TokenStream {
     let item: syn::Item =

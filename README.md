@@ -99,6 +99,7 @@ Expr::Binary
 | `#[list]`                      | Format the annotated field by executing AstToStr on every element of `(&field).into_iter()`                                  |
 | `#[list(name_or_closure)`      | Format the annotated field by applying the callback on every element of `(&field).into_iter(                                 |
 | `#[callback(name_or_closure)]` | Apply the given function or closure to `&field` and return the result                                                        |
+| `#[delegate = "getter"]`       | Call `self.getter()` and format the result as a field                                                                        |
 | `#[default = "value"]`         | Only applies to `Option` types. If the value is `Some(T)`, format &T with AstToStr. Otherwise, return the value of `default` |
 
 [crate]: https://crates.io/crates/ast2str

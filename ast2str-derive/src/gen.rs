@@ -34,6 +34,10 @@ pub enum BuilderAttribute {
     /// # `#[callback(name)]` or `#[callback(|x| ...)]`
     /// Formats the field using the given callback. Translates to [`TreeBuilder::display`].
     Callback(TokenStream2),
+    /// # `#[delegate = "getter_name"]`
+    /// Delegates the formatting of this to the given method on `self`. The method must accept
+    /// no arguments and return something that implements `AstToStr`.
+    Delegate(syn::Ident),
     /// # `#[default = "None"]`
     /// Formats the field as an option, displaying the supplied default if the value isn't present.
     Option(syn::Lit),
@@ -129,6 +133,9 @@ pub fn generate_builder_methods(
                     builder.display(stringify!(#builder_name), (#cb)( #accessor))
                 });
             }
+            BuilderAttribute::Delegate(method_name) => tokens.push(quote! {
+                builder.field(stringify!(#builder_name),  &self.#method_name())
+            }),
             BuilderAttribute::Option(default) => {
                 tokens.push(quote! {
                     builder.option(stringify!(#builder_name), #default,  #accessor)
@@ -267,6 +274,17 @@ fn get_attribute(attr: &syn::Attribute) -> Result<A2SAttribute, syn::Error> {
         "quoted" => BuilderAttribute::Quoted,
         "display" => BuilderAttribute::Display,
         "callback" => BuilderAttribute::Callback(attr.tokens.clone()),
+        "delegate" => BuilderAttribute::Delegate({
+            match parse_key_value_attr(attr)? {
+                syn::Lit::Str(s) => Ident::new(&s.value(), s.span()),
+                rest => {
+                    return Err(syn::Error::new(
+                        rest.span(),
+                        "The delegate method name must be a string.",
+                    ))
+                }
+            }
+        }),
         "default" => BuilderAttribute::Option(parse_key_value_attr(attr)?),
         "rename" => return Ok(A2SAttribute::Rename(parse_key_value_attr(attr)?)),
         "list" => {
