@@ -104,6 +104,6 @@ Expr::Binary
 [crate]: https://crates.io/crates/ast2str
 [crate logo]: https://img.shields.io/crates/v/ast2str.svg
 [doc]: https://docs.rs/ast2str
-[doc logo]: https://docs.rs/astr2str/badge.svg
+[doc logo]: https://docs.rs/ast2str/badge.svg
 [ci]: https://github.com/optimalstrategy/ast2str/actions
 [ci logo]: https://github.com/optimalstrategy/ast2str/actions/workflows/rust.yml/badge.svg
