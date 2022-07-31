@@ -10,6 +10,11 @@ description = "A crate for pretty-printing ASTs and other recursive data structu
 documentation = "https://docs.rs/ast2str"
 
 [dependencies]
+hashbrown = { version = "0.12.3", optional = true }
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"
+
+[features]
+allocator_api = ["hashbrown/nightly"]
+impl_hashbrown = ["hashbrown"]

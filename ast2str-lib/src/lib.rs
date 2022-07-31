@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "allocator_api", feature(allocator_api,))]
+use std::collections::VecDeque;
+
 pub mod builder;
 pub mod utils;
 
@@ -248,9 +251,45 @@ impl_ast!(display u8, u16, u32, u64, u128);
 impl_ast!(display f32, f64);
 impl_ast!(display isize, usize);
 impl_ast!(display bool);
-impl_ast!(ptr Box<T>, std::rc::Rc<T>, std::sync::Arc<T>);
+impl_ast!(ptr std::rc::Rc<T>, std::sync::Arc<T>);
 
+#[cfg(not(feature = "allocator_api"))]
+impl<T: AstToStr> AstToStr for Box<T> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        (**self).ast_to_str_impl(s)
+    }
+}
+
+#[cfg(feature = "allocator_api")]
+impl<T: AstToStr, A: core::alloc::Allocator> AstToStr for Box<T, A> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        (**self).ast_to_str_impl(s)
+    }
+}
+
+#[cfg(not(feature = "allocator_api"))]
 impl<T: AstToStr> AstToStr for Vec<T> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
+    }
+}
+
+#[cfg(feature = "allocator_api")]
+impl<T: AstToStr, A: core::alloc::Allocator> AstToStr for Vec<T, A> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
+    }
+}
+
+#[cfg(not(feature = "allocator_api"))]
+impl<T: AstToStr> AstToStr for VecDeque<T> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
+    }
+}
+
+#[cfg(feature = "allocator_api")]
+impl<T: AstToStr, A: core::alloc::Allocator> AstToStr for VecDeque<T, A> {
     fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
         crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
     }
@@ -278,7 +317,7 @@ impl<V: Copy + AstToStr> AstToStr for std::cell::Cell<V> {
     }
 }
 
-impl<K: AstToStr, V: AstToStr> AstToStr for std::collections::HashMap<K, V> {
+impl<K: AstToStr, V: AstToStr, S> AstToStr for std::collections::HashMap<K, V, S> {
     fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
         crate::builder::print_ast_list_without_node_name(
             self.iter().enumerate(),
@@ -290,6 +329,60 @@ impl<K: AstToStr, V: AstToStr> AstToStr for std::collections::HashMap<K, V> {
             },
             s,
         )
+    }
+}
+
+impl<K: AstToStr, S> AstToStr for std::collections::HashSet<K, S> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
+    }
+}
+
+#[cfg(all(feature = "impl_hashbrown", not(feature = "allocator_api")))]
+impl<K: AstToStr, V: AstToStr, S> AstToStr for hashbrown::HashMap<K, V, S> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(
+            self.iter().enumerate(),
+            |(i, (k, v))| {
+                crate::builder::TreeBuilder::new(&format!("entry: {}", i), s)
+                    .field("key", k)
+                    .field("value", v)
+                    .build()
+            },
+            s,
+        )
+    }
+}
+
+#[cfg(all(feature = "impl_hashbrown", feature = "allocator_api"))]
+impl<K: AstToStr, V: AstToStr, S, A: core::alloc::Allocator + Clone> AstToStr
+    for hashbrown::HashMap<K, V, S, A>
+{
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(
+            self.iter().enumerate(),
+            |(i, (k, v))| {
+                crate::builder::TreeBuilder::new(&format!("entry: {}", i), s)
+                    .field("key", k)
+                    .field("value", v)
+                    .build()
+            },
+            s,
+        )
+    }
+}
+
+#[cfg(all(feature = "impl_hashbrown", not(feature = "allocator_api")))]
+impl<K: AstToStr, S> AstToStr for hashbrown::HashSet<K, S> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
+    }
+}
+
+#[cfg(all(feature = "impl_hashbrown", feature = "allocator_api"))]
+impl<K: AstToStr, S, A: core::alloc::Allocator + Clone> AstToStr for hashbrown::HashSet<K, S, A> {
+    fn ast_to_str_impl(&self, s: &dyn Symbols) -> String {
+        crate::builder::print_ast_list_without_node_name(self, |e| e.ast_to_str_impl(s), s)
     }
 }
 
