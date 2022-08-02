@@ -19,6 +19,7 @@
 /// [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
 /// [`Debug`]: https://doc.rust-lang.org/std/fmt/trait.Debug.html
 /// [`Display::fmt`]: https://doc.rust-lang.org/std/fmt/trait.Display.html#tymethod.fmt
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq)]
 pub struct DisplayAsDebugWrapper<T>(pub T);
 

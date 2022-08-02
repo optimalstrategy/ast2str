@@ -94,6 +94,16 @@ pub enum ExprKind<'a, T: Numeric> {
     },
     List(#[rename = "elements"] Vec<Expr<'a, T>>),
     Variable(#[rename = "name"] Token<'a>),
+    Conditional {
+        #[skip]
+        skip_me_always: (),
+        #[skip_if = "Option::is_none"]
+        condition: Option<Ptr<'a, T>>,
+
+        #[rename = "values"]
+        #[skip_if = "Vec::is_empty"]
+        my_values: Vec<Expr<'a, T>>,
+    },
 }
 
 #[derive(AstToStr)]
@@ -155,6 +165,14 @@ fn get_ast() -> Expr<'static, f64> {
         expr!(unboxed SpecialValue LitValue::Bool(false)),
         expr!(unboxed SpecialValue LitValue::Str("another string")),
         expr!(unboxed Variable Token { source: "a variable  ", span: 2..10 }),
+        expr!(unboxed Conditional { skip_me_always: (), condition: None, my_values: vec![] }),
+        expr!(unboxed Conditional { skip_me_always: (), condition: None, my_values: vec![expr!(unboxed Literal lit!(Bool false))] }),
+        expr!(unboxed Conditional { skip_me_always: (), condition: Some(expr!(Literal lit!(Bool true))), my_values: vec![] }),
+        expr!(unboxed Conditional {
+            skip_me_always: (),
+            condition: Some(expr!(Literal lit!(Bool true))),
+            my_values: vec![expr!(unboxed Literal lit!(Bool false))]
+        }),
     ])
 }
 
@@ -199,9 +217,23 @@ ExprKind::List
   │ ╰─field0: false
   ├─LitValue::Str
   │ ╰─field0: `another string`
-  ╰─ExprKind::Variable
-    ╰─name: Token
-      ╰─lexeme: "variable""#
+  ├─ExprKind::Variable
+  │ ╰─name: Token
+  │   ╰─lexeme: "variable"
+  ├─ExprKind::Conditional
+  ├─ExprKind::Conditional
+  │ ╰─values=↓
+  │   ╰─Literal
+  │     ╰─value: Bool(false)
+  ├─ExprKind::Conditional
+  │ ╰─condition: Literal
+  │   ╰─value: Bool(true)
+  ╰─ExprKind::Conditional
+    ├─condition: Literal
+    │ ╰─value: Bool(true)
+    ╰─values=↓
+      ╰─Literal
+        ╰─value: Bool(false)"#
             .trim()
             .with_display_as_debug_wrapper()
     );
@@ -253,7 +285,21 @@ ExprKind::List
     ExprKind::Variable
       name: Token
         lexeme: "variable"
-      "#
+    ExprKind::Conditional
+    ExprKind::Conditional
+      values=
+        Literal
+          value: Bool(false)
+    ExprKind::Conditional
+      condition: Literal
+        value: Bool(true)
+    ExprKind::Conditional
+      condition: Literal
+        value: Bool(true)
+      values=
+        Literal
+          value: Bool(false)
+    "#
         .trim()
         .with_display_as_debug_wrapper()
     );

@@ -292,7 +292,7 @@ impl<'a, 's> TreeBuilder<'a, 's> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TreeIndent {
     Trunk,
     Branch,
@@ -361,11 +361,7 @@ pub fn print_ast_list_without_node_name<T>(
     } else {
         s.item_list_symbol()
     };
-    format(
-        &format!("={}", symbol)[..],
-        collection.map(|item| f(item)).collect(),
-        s,
-    )
+    format(&format!("={}", symbol)[..], collection.map(f).collect(), s)
 }
 
 /// Very inefficiently formats the given node and children into a tree by indenting every line.

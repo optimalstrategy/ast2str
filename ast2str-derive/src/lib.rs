@@ -14,11 +14,10 @@ use syn::{spanned::Spanned, Ident, ItemEnum, ItemStruct};
 /// Automatically implements the [`AstToStr`] trait for the given struct or enum.
 /// Every field of the given item must implement [`AstToStr`] or be annotated with one of the
 /// the attributes.
-///
 #[proc_macro_derive(
     AstToStr,
     attributes(
-        skip, forward, debug, display, quoted, callback, default, list, rename, delegate
+        skip, skip_if, forward, debug, display, quoted, callback, default, list, rename, delegate
     )
 )]
 pub fn derive_ast2str(input: TokenStream) -> TokenStream {
@@ -68,6 +67,7 @@ fn generate_struct_impl(i: ItemStruct) -> Result<TokenStream2, syn::Error> {
         &generics,
         quote! {
             #[allow(unused_parens)]
+            #[allow(unused_variables)]
             fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
                 let mut builder = TreeBuilder::new(#rename_as, __symbols);
@@ -143,6 +143,7 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
         &e.generics,
         quote! {
             #[allow(unused_parens)]
+            #[allow(unused_variables)]
             fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
                 use #enum_name::*;

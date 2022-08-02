@@ -22,6 +22,9 @@ pub enum BuilderAttribute {
     /// # `#[skip]`
     /// Exclude the specified field from the output.
     Skip,
+    /// # `#[skip_if = "Option::is_none"]`
+    /// Exclude the field from the output if the specified callback returns `true`.
+    SkipIf(TokenStream2),
     /// # `#[quoted]`
     /// Wraps the field name with backtickts. Translates to [`TreeBuilder::quoted`].
     Quoted,
@@ -126,6 +129,15 @@ pub fn generate_builder_methods(
             BuilderAttribute::Debug => {
                 tokens.push(quote! {
                     builder.debug(stringify!(#builder_name),  #accessor)
+                });
+            }
+            BuilderAttribute::SkipIf(condition) => {
+                tokens.push(quote! {
+                    if (#condition)(#accessor) {
+                        builder
+                    } else {
+                        builder.field(stringify!(#builder_name),  #accessor)
+                    }
                 });
             }
             BuilderAttribute::Callback(cb) => {
@@ -274,6 +286,25 @@ fn get_attribute(attr: &syn::Attribute) -> Result<A2SAttribute, syn::Error> {
         "quoted" => BuilderAttribute::Quoted,
         "display" => BuilderAttribute::Display,
         "callback" => BuilderAttribute::Callback(attr.tokens.clone()),
+        "skip_if" => BuilderAttribute::SkipIf({
+            match parse_key_value_attr(attr)? {
+                syn::Lit::Str(s) => match s.value().parse::<TokenStream2>() {
+                    Ok(tokens) => tokens,
+                    Err(e) => {
+                        return Err(syn::Error::new(
+                            s.span(),
+                            &format!("Failed to parse the skip_if condition: {}", e),
+                        ))
+                    }
+                },
+                rest => {
+                    return Err(syn::Error::new(
+                        rest.span(),
+                        "The skip_if condition must be a specified as a string literal.",
+                    ))
+                }
+            }
+        }),
         "delegate" => BuilderAttribute::Delegate({
             match parse_key_value_attr(attr)? {
                 syn::Lit::Str(s) => Ident::new(&s.value(), s.span()),

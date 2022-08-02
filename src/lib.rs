@@ -32,9 +32,12 @@
 //!     Literal(#[rename = "value"] i32, #[skip] Span),
 //!     List { items: Vec<Expr> },
 //!     Label(#[forward] Label),
+//!     Optional {
+//!         #[skip_if = "Option::is_none"]
+//!         value: Option<&'static str>
+//!     }
 //! }
 //!
-//! // Enjoy the tree!
 //! let expr = Expr::Binary {
 //!     left: Box::new(Expr::Literal(5, Span::default())),
 //!     operator: "+",
@@ -42,6 +45,8 @@
 //!        Expr::Label(Label { name: "x", location: Some(0) }),
 //!        Expr::Label(Label { name: "y", location: Some(1) }),
 //!        Expr::Label(Label { name: "z", location: None }),
+//!        Expr::Optional { value: None },
+//!        Expr::Optional { value: Some("a string") },
 //!     ]})
 //! };
 //! assert_eq!(expr.ast_to_str(), r#"
@@ -57,9 +62,12 @@
 //!     ├─Label
 //!     │ ├─name: `y`
 //!     │ ╰─location: 1
-//!     ╰─Label
-//!       ├─name: `z`
-//!       ╰─location: Unresolved
+//!     ├─Label
+//!     │ ├─name: `z`
+//!     │ ╰─location: Unresolved
+//!     ├─Expr::Optional
+//!     ╰─Expr::Optional
+//!       ╰─value: "a string"
 //! "#.trim());
 //!
 //! // The symbols used to draw the tree can be configured using the [`Symbols`] trait:
@@ -79,6 +87,9 @@
 //!       Label
 //!         name: `z`
 //!         location: Unresolved
+//!       Expr::Optional
+//!       Expr::Optional
+//!         value: "a string"
 //! "#.trim());
 //! ```
 //!
@@ -87,16 +98,17 @@
 //! | Attribute    |                                                                          |
 //! |--------------|--------------------------------------------------------------------------|
 //! | None         | Format the value with [`AstToStr`]                                       |
-//! | `#[forward]` | Skip all other fields and return the [`AstToStr]` of the annotated field |
-//! | `#[skip]`    | Skip the annoated field                                                  |
+//! | `#[forward]` | Skip all other fields and return the [`AstToStr`] of the annotated field |
+//! | `#[skip]`    | Skip the annotated field                                                  |
 //! | `#[display]` | Format the annotated field with [`Display`] instead of [`AstToStr`]      |
 //! | `#[debug]`   | Format the annotated field with [`Debug`] instead of [`AstToStr`]        |
 //! | `#[quoted]`  | Like `#[display]` but also wraps the value with backticks                |
 //! | `#[list]`    | Format the annotated field by executing AstToStr on every element of `(&field).into_iter()` |
-//! | `#[list(name_or_closure)`      | Format the annotated field by applying the callback on every element of `(&field).into_iter()` |
-//! | `#[callback(name_or_closure)]` | Apply the given function or closure to `&field` and return the result |
-//! | `#[delegate = "getter"]`       | Call `self.getter()` and format the result as a field |
-//! | `#[default = "value"]`         | Only applies to `Option` types. If the value is `Some(T)`, format &T with AstToStr. Otherwise, return the value of `default` |
+//! | `#[list(name_or_closure)`        | Format the annotated field by applying the callback on every element of `(&field).into_iter()` |
+//! | `#[callback(name_or_closure)]`   | Apply the given function or closure to `&field` and return the result |
+//! | `#[delegate = "getter"]`         | Call `self.getter()` and format the result as a field |
+//! | `#[default = "value"]`           | Only applies to `Option` types. If the value is `Some(T)`, format &T with AstToStr. Otherwise, return the value of `default` |
+//! | `#[skip_if = "my_condition_fn"]` | Skip the annotated field if the specified function returns `true` |
 //!
 //! [`AstToStr`]: struct.AstToStr.html
 //! [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html

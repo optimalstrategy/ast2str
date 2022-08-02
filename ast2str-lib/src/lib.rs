@@ -62,8 +62,8 @@ impl<'s> std::fmt::Debug for &'s dyn Symbols {
     }
 }
 
-/// A macro for quick-n-dirty creation of `Symbols` implementations.
-/// Accepts either 10 difference strings to use as symbols in the order they appear in the trait, or a single value to be used inside all methods.
+/// A macro for quick-and-dirty creation of `Symbols` implementations.
+/// Accepts either 10 different strings to use as symbols in the order they appear in the trait, or a single value to be used inside all methods.
 #[macro_export]
 macro_rules! create_symbols {
     ($Ty:ident,
