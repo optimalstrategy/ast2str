@@ -1,6 +1,6 @@
 [package]
 name = "ast2str"
-version = "1.4.0"
+version = "1.4.1"
 authors = ["OptimalStrategy <17456182+OptimalStrategy@users.noreply.github.com>"]
 edition = "2018"
 homepage = "https://github.com/optimalstrategy/ast2str"
@@ -17,7 +17,7 @@ exclude = [
 
 [dependencies]
 ast2str-lib = { version = "1.2.1", path = "ast2str-lib" }
-ast2str-derive = { version = "0.4.0", path = "ast2str-derive" }
+ast2str-derive = { version = "0.4.1", path = "ast2str-derive" }
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"

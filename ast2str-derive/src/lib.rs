@@ -118,7 +118,7 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
             }
 
             quote! {
-                #name { #(#field_bindings),* }
+                #enum_name::#name { #(#field_bindings),* }
             }
         };
         arms.push(quote! {
@@ -146,7 +146,6 @@ fn generate_enum_impl(e: ItemEnum) -> Result<TokenStream2, syn::Error> {
             #[allow(unused_variables)]
             fn ast_to_str_impl(&self, __symbols: &dyn ::ast2str::ast2str_lib::Symbols) -> String {
                 use ::ast2str::ast2str_lib::TreeBuilder;
-                use #enum_name::*;
                 #impl_body
             }
         },
