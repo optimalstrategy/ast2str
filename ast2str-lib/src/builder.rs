@@ -253,7 +253,7 @@ impl<'a, 's> TreeBuilder<'a, 's> {
         self
     }
 
-    /// Adds the given value to tree as a child.
+    /// Adds the given value to the tree as a child.
     ///
     /// # Example
     /// ```
@@ -262,13 +262,13 @@ impl<'a, 's> TreeBuilder<'a, 's> {
     ///
     /// let mut tree = TreeBuilder::with_default_symbols("root");
     /// tree = tree.add_child(std::f64::consts::PI);
-    /// tree = tree.add_child("any ToString to value works");
+    /// tree = tree.add_child("any ToString value works");
     /// assert_eq!(
     ///     tree.build(),
     ///     r#"
     /// root
     /// ├─3.141592653589793
-    /// ╰─any ToString to value works
+    /// ╰─any ToString value works
     /// "#.trim());
     /// ```
     /// [`list`]: struct.TreeBuilder.html#method.list
@@ -292,6 +292,9 @@ impl<'a, 's> TreeBuilder<'a, 's> {
     }
 }
 
+// This enum should be private, but it has been public for a while. Although unlikely, but someone could be
+// importing it in their code.
+#[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TreeIndent {
     Trunk,
@@ -305,7 +308,8 @@ impl TreeIndent {
     }
 }
 
-/// A function used by [`TreeBuilder::list`] and [`TreeBuilder::list_map`] that does the formatting.
+/// A function used by [`TreeBuilder::list`] and [`TreeBuilder::list_map`] for list formatting.
+/// Also see [`print_ast_list_without_node_name`].
 pub fn print_ast_list_generic<T>(
     node: &str,
     collection: impl IntoIterator<Item = T>,
